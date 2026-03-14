@@ -1,6 +1,6 @@
 """XAP Protocol SDK — Settlement objects for autonomous agent commerce."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from xap.types import (
     Money,

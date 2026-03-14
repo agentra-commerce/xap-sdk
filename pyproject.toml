@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xap-sdk"
-version = "0.3.0"
+version = "0.4.0"
 description = "XAP Protocol SDK — Settlement objects for autonomous agent commerce"
 readme = "README.md"
 license = "MIT"
@@ -30,14 +30,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = ["mcp>=0.1"]
 stripe = ["stripe>=7.0"]
 langchain = ["langchain>=0.1"]
 crewai = ["crewai>=0.1"]
-all = ["stripe>=7.0", "langchain>=0.1", "crewai>=0.1"]
+all = ["mcp>=0.1", "stripe>=7.0", "langchain>=0.1", "crewai>=0.1"]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.23",
 ]
+
+[project.scripts]
+xap-mcp = "xap.mcp.server:main_cli"
 
 [project.urls]
 Homepage = "https://github.com/agentralabs/xap-sdk"

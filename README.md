@@ -92,6 +92,21 @@ xap-sdk         — This package. Build with XAP in Python.
 Agentra Rail    — Commercial infrastructure. The GitHub of agent settlement.
 ```
 
+## MCP Integration
+
+Connect XAP to Claude, Cursor, or any MCP-compatible AI:
+
+```bash
+pip install xap-sdk[mcp]
+python -m xap.mcp.setup  # Auto-configure for Claude
+```
+
+Or run the server directly:
+
+```bash
+xap-mcp
+```
+
 ## Examples
 
 | Example | What it shows |
@@ -99,6 +114,7 @@ Agentra Rail    — Commercial infrastructure. The GitHub of agent settlement.
 | [Two-Agent Demo](examples/two_agent_demo.py) | Full flow: discover, negotiate, settle, replay |
 | [Three-Agent Split](examples/three_agent_split.py) | Multi-party settlement with basis point splits |
 | [Unknown Outcome](examples/unknown_outcome.py) | Partial settlement and refund scenarios |
+| [MCP Demo](examples/mcp_demo.py) | MCP server tools in action |
 
 ## Key Concepts
 

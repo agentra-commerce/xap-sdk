@@ -1,0 +1,50 @@
+# ZexRail Agent Discovery
+# https://zexrail.com/agent.txt
+
+name: ZexRail
+description: AI agent settlement infrastructure
+protocol: XAP (eXchange Agent Protocol)
+version: 0.2.0
+
+# API endpoints
+api: https://api.zexrail.com/v1
+sandbox_api: https://api.sandbox.zexrail.com/v1
+
+# Documentation
+docs: https://zexrail.com/docs
+quickstart: https://zexrail.com/docs/quickstart
+api_reference: https://zexrail.com/docs/api
+
+# Protocol specification
+specification: https://doi.org/10.5281/zenodo.18944370
+
+# SDK
+sdk_python: https://pypi.org/project/xap-sdk/
+sdk_install: pip install xap-sdk
+
+# MCP server
+mcp_install: pip install xap-sdk[mcp]
+mcp_command: python -m xap.mcp.server
+
+# Integration
+langchain: pip install xap-sdk[langchain]
+crewai: pip install xap-sdk[crewai]
+
+# Source
+github: https://github.com/agentralabs/xap-protocol
+github_sdk: https://github.com/agentralabs/xap-sdk
+
+# Capabilities
+capabilities:
+  - agent.discovery
+  - negotiation.offer
+  - negotiation.counter
+  - negotiation.accept
+  - settlement.create
+  - settlement.execute
+  - receipt.verify
+  - replay.execute
+
+# Contact
+company: Agentra Labs
+website: https://agentralabs.tech
