@@ -1,7 +1,6 @@
 """
 xap/clients/workflow.py — Causal chain and workflow queries.
 """
-import httpx
 
 
 class WorkflowClient:
@@ -10,6 +9,7 @@ class WorkflowClient:
 
     async def get_chain(self, receipt_id: str) -> dict:
         """Get the full causal chain for a receipt, root first."""
+        import httpx
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(
                 f"{self.base_url}/xap/v1/verity/receipts/{receipt_id}/chain"
@@ -19,6 +19,7 @@ class WorkflowClient:
 
     async def get_workflow(self, workflow_id: str) -> dict:
         """Get all receipts in a workflow."""
+        import httpx
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(
                 f"{self.base_url}/xap/v1/verity/workflows/{workflow_id}"

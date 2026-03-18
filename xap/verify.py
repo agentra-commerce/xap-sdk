@@ -15,8 +15,6 @@ import hashlib
 from typing import Optional
 from dataclasses import dataclass, field
 
-import httpx
-
 from xap.manifest import AgentManifest
 from xap.schemas.validator import SchemaValidator
 from xap.errors import XAPValidationError
@@ -118,6 +116,7 @@ async def verify_receipt_full(
     base_url: str = "https://api.zexrail.com",
 ) -> ReceiptVerification:
     """Fetch and fully verify a VerityReceipt with all gap fields."""
+    import httpx
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(f"{base_url}/xap/v1/verity/receipts/{verity_id}")
         if r.status_code == 404:
