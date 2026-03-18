@@ -214,7 +214,7 @@ Every agent-to-agent economic interaction produces governed objects that are:
 
 ```
 xap-protocol    — Open standard (MIT). The language agents speak.
-verity-engine   — Truth engine (Rust). The Git of financial truth.
+verity-engine   — Open source truth engine (Rust, MIT). The Git of financial truth.
 xap-sdk         — This package. Build XAP-native agents in Python.
 Agentra Rail    — Commercial infrastructure. Production settlement at scale.
 ```
@@ -269,7 +269,7 @@ This exposes XAP's full capability — discovery, negotiation, settlement, recei
 ## Links
 
 - [XAP Protocol Specification](https://github.com/agentralabs/xap-protocol)
-- [Verity Truth Engine](https://www.agentralabs.tech)
+- [Verity Truth Engine](https://github.com/agentralabs/verity-engine)
 - [Agentra Rail — Production Infrastructure](https://www.agentralabs.tech)
 - [Discord Community](https://discord.gg/agentralabs)
 
