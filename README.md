@@ -154,9 +154,9 @@ async def multi_agent_workflow():
     settlement = orchestrator.settlement.create(
         payer_id=str(orchestrator.agent_id),
         payees=[
-            {"agent_id": str(executor.agent_id),   "share_bps": 7000},  # 70%
-            {"agent_id": str(verifier.agent_id),    "share_bps": 2000},  # 20%
-            {"agent_id": str(orchestrator.agent_id),"share_bps": 1000},  # 10%
+            {"agent_id": str(executor.agent_id),    "share_bps": 7000},  # 70%
+            {"agent_id": str(verifier.agent_id),     "share_bps": 2000},  # 20%
+            {"agent_id": str(orchestrator.agent_id), "share_bps": 1000},  # 10%
         ],
         amount_minor_units=10_000,  # $100.00
         currency="USD",
@@ -175,9 +175,9 @@ async def multi_agent_workflow():
         }],
     )
 
-    print(f"Outcome: {result.receipt['outcome']}")
-    print(f"Executor:     ${result.receipt['payouts'][str(executor.agent_id)] / 100:.2f}")
-    print(f"Verifier:     ${result.receipt['payouts'][str(verifier.agent_id)] / 100:.2f}")
+    print(f"Outcome:   {result.receipt['outcome']}")
+    print(f"Executor:  ${result.receipt['payouts'][str(executor.agent_id)] / 100:.2f}")
+    print(f"Verifier:  ${result.receipt['payouts'][str(verifier.agent_id)] / 100:.2f}")
 
 asyncio.run(multi_agent_workflow())
 ```
@@ -268,10 +268,8 @@ This exposes XAP's full capability — discovery, negotiation, settlement, recei
 
 ## Links
 
-- [XAP Protocol](https://xap-protocol.org) — Open standard homepage
-- [Verity Engine](https://verityengine.io) — Open truth engine homepage
-- [XAP Protocol GitHub](https://github.com/agentra-commerce/xap-protocol)
-- [Verity Engine GitHub](https://github.com/agentra-commerce/verity-engine)
+- [XAP Protocol Specification](https://github.com/agentra-commerce/xap-protocol)
+- [Verity Truth Engine](https://github.com/agentra-commerce/verity-engine)
 - [Agentra Rail — Production Infrastructure](https://www.agentralabs.tech)
 - [Discord Community](https://discord.gg/agentralabs)
 
