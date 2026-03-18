@@ -26,6 +26,8 @@ docs: https://zexrail.com/docs
 
 # Protocol specification
 specification: https://doi.org/10.5281/zenodo.18944370
+protocol_spec: https://xap-protocol.org/spec
+verity_public: https://verityengine.io/verify
 
 # SDK
 sdk_python: https://pypi.org/project/xap-sdk/

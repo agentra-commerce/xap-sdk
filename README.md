@@ -268,8 +268,10 @@ This exposes XAP's full capability — discovery, negotiation, settlement, recei
 
 ## Links
 
-- [XAP Protocol Specification](https://github.com/agentra-commerce/xap-protocol)
-- [Verity Truth Engine](https://github.com/agentra-commerce/verity-engine)
+- [XAP Protocol](https://xap-protocol.org) — Open standard homepage
+- [Verity Engine](https://verityengine.io) — Open truth engine homepage
+- [XAP Protocol GitHub](https://github.com/agentra-commerce/xap-protocol)
+- [Verity Engine GitHub](https://github.com/agentra-commerce/verity-engine)
 - [Agentra Rail — Production Infrastructure](https://www.agentralabs.tech)
 - [Discord Community](https://discord.gg/agentralabs)
 
