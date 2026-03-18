@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 from xap.integrations.base import XAPIntegrationBase
+
+XAP_MODE    = os.environ.get("XAP_MODE", "sandbox")    # "sandbox" or "live"
+XAP_API_KEY = os.environ.get("XAP_API_KEY", "")         # required for live
+XAP_API_URL = os.environ.get("XAP_API_URL",             # override for local dev
+                "https://api.zexrail.com")
 
 app = Server("xap-mcp")
 _base: XAPIntegrationBase | None = None
@@ -20,7 +27,7 @@ def get_base() -> XAPIntegrationBase:
     return _base
 
 def _tool_schemas() -> list[Tool]:
-    """Return the 7 XAP tool definitions."""
+    """Return the 8 XAP tool definitions."""
     return [
         Tool(
             name="xap_discover_agents",
@@ -67,7 +74,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_verify_manifest",
-            description="Verify an agent's manifest (Ed25519 signature + expiry). Call after xap_discover_agents, before xap_create_offer.",
+            description="Verify an agent's trust credential (AgentManifest) by cryptographically replaying Verity receipts. Returns: signature validity, expiry status, TSA-anchored count, policy-verified count, attested condition count, and a TRUST/VERIFY_MANUALLY/DO_NOT_TRUST recommendation.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -182,6 +189,20 @@ def _tool_schemas() -> list[Tool]:
                 "required": [],
             },
         ),
+        Tool(
+            name="xap_verify_workflow",
+            description="Verify the complete causal chain of a multi-agent workflow. Checks that every receipt in the workflow is valid, replayed correctly, and causally linked.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "workflow_id": {
+                        "type": "string",
+                        "description": "The workflow ID (wf_[8 hex]) from any receipt in the chain",
+                    },
+                },
+                "required": ["workflow_id"],
+            },
+        ),
     ]
 
 
@@ -228,17 +249,49 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
 
         elif name == "xap_verify_manifest":
-            from xap.verify import verify_manifest
+            from xap.verify import verify_manifest, verify_manifest_full
             manifest = arguments["manifest"]
             v = verify_manifest(manifest)
             att = manifest.get("capabilities", [{}])[0].get("attestation", {})
+
+            # Attempt full verification with gap fields if basic checks pass
+            tsa_anchored = 0
+            policy_verified = 0
+            attested_conditions = 0
+            receipts_replayed = 0
+            replay_confirmed = 0
+            full_recommendation = None
+            full_warnings = []
+
+            if v.valid:
+                try:
+                    mv = await verify_manifest_full(manifest, sample_receipts=3)
+                    tsa_anchored = mv.tsa_anchored_count
+                    policy_verified = mv.policy_verified_count
+                    attested_conditions = mv.attested_conditions
+                    receipts_replayed = mv.receipts_checked
+                    replay_confirmed = mv.replay_confirmed
+                    if mv.receipts_checked > 0:
+                        full_recommendation = mv.recommendation
+                    full_warnings = mv.warnings
+                except Exception:
+                    pass  # Full verification is additive — basic result stands
+
             verdict = {
                 "verified": v.valid, "schema_valid": v.schema_valid,
                 "signature_valid": v.signature_valid, "not_expired": v.not_expired,
                 "claimed_success_rate": f"{att.get('success_rate_bps', 0) / 100:.1f}%",
                 "total_settlements": att.get("total_settlements", 0),
+                "receipts_replayed": receipts_replayed,
+                "replay_confirmed": replay_confirmed,
+                "tsa_anchored": tsa_anchored,
+                "policy_verified": policy_verified,
+                "attested_conditions": attested_conditions,
                 "errors": v.errors,
-                "recommendation": "TRUST — valid" if v.valid else "DO_NOT_TRUST — verification failed",
+                "warnings": full_warnings,
+                "recommendation": full_recommendation or (
+                    "TRUST — valid" if v.valid else "DO_NOT_TRUST — verification failed"
+                ),
             }
             return [TextContent(type="text", text=json.dumps(verdict, indent=2))]
 
@@ -282,6 +335,15 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return [TextContent(type="text", text=json.dumps(
                 {"balance": base.check_balance(arguments.get("agent_id"))}))]
 
+        elif name == "xap_verify_workflow":
+            from xap.clients.workflow import WorkflowClient
+            wf_client = WorkflowClient()
+            try:
+                result = await wf_client.verify_workflow(arguments["workflow_id"])
+                return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
+            except Exception as e:
+                return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
+
         else:
             return [TextContent(type="text", text=json.dumps({"error": f"Unknown tool: {name}"}))]
     except Exception as e:
@@ -289,6 +351,10 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 
 async def main():
+    print(f"[xap-mcp] Mode: {XAP_MODE}", file=sys.stderr)
+    if XAP_MODE == "live" and not XAP_API_KEY:
+        print("[xap-mcp] Warning: XAP_MODE=live but XAP_API_KEY not set", file=sys.stderr)
+        print("[xap-mcp] Get your API key at https://zexrail.com/login", file=sys.stderr)
     async with stdio_server() as (read, write):
         await app.run(read, write, app.create_initialization_options())
 

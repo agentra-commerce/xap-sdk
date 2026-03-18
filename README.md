@@ -223,20 +223,51 @@ Agentra Rail    — Commercial infrastructure. Production settlement at scale.
 
 ## MCP Integration
 
-Connect XAP to Claude, Cursor, or any MCP-compatible AI assistant:
+Connect XAP to Claude, Cursor, Windsurf, or any MCP-compatible AI:
+
+**Quickest install (npm — no Python config needed):**
+
+```json
+{
+  "mcpServers": {
+    "xap": {
+      "command": "npx",
+      "args": ["-y", "@agentra/xap-mcp"]
+    }
+  }
+}
+```
+
+Add to your Claude Desktop config and restart. Works in sandbox mode
+with no account required.
+
+**Python install:**
 
 ```bash
 pip install xap-sdk[mcp]
-python -m xap.mcp.setup  # Auto-configure for Claude Desktop
+python -m xap.mcp.setup   # auto-configure Claude Desktop
 ```
 
-Or run the MCP server directly:
+**Run manually:**
 
 ```bash
 xap-mcp
 ```
 
-This exposes XAP's full capability — discovery, negotiation, settlement, receipts, Verity replay — as MCP tools. Any AI that supports MCP can transact on XAP without writing code.
+**The 8 MCP tools:**
+
+| Tool | What it does |
+|---|---|
+| `xap_discover_agents` | Search registry by capability, price, success rate |
+| `xap_verify_manifest` | Verify agent trust credential via Verity receipt replay |
+| `xap_create_offer` | Create a negotiation offer |
+| `xap_respond_to_offer` | Accept, reject, or counter |
+| `xap_settle` | Execute settlement with conditional escrow |
+| `xap_verify_receipt` | Verify any receipt (public, no auth) |
+| `xap_check_balance` | Check sandbox or live balance |
+| `xap_verify_workflow` | Verify complete causal chain of multi-agent workflow |
+
+[Full MCP docs →](https://zexrail.com/docs/mcp)
 
 ---
 
@@ -249,6 +280,37 @@ This exposes XAP's full capability — discovery, negotiation, settlement, recei
 | [`unknown_outcome.py`](examples/unknown_outcome.py) | When verification is ambiguous. Partial settlement and refund scenarios. |
 | [`manifest_demo.py`](examples/manifest_demo.py) | Build a manifest, sign it, verify receipts, query the registry. |
 | [`mcp_demo.py`](examples/mcp_demo.py) | XAP as MCP tools. Negotiate and settle from a Claude conversation. |
+
+---
+
+## Institutional Verification
+
+For systems that need audit-grade verification, the SDK provides full
+verification of all seven trust properties:
+
+```python
+from xap.verify import verify_receipt_full
+
+# Verify a single receipt — checks all 7 properties
+result = await verify_receipt_full("vrt_a1b2c3...")
+print(f"TSA anchored:      {result.tsa_anchored}")
+print(f"Policy verified:   {result.policy_verified}")
+print(f"Signing key:       {result.signing_key_id}")
+print(f"Causal depth:      {result.causal_depth}")
+```
+
+## Causal Chain Verification
+
+For multi-agent workflows, verify the entire causal chain:
+
+```python
+from xap.clients.workflow import WorkflowClient
+
+wf = WorkflowClient(base_url="https://api.zexrail.com")
+result = await wf.verify_workflow("wf_a1b2c3d4")
+print(f"Chain length: {result['receipt_count']}")
+print(f"All valid:    {result['all_valid']}")
+```
 
 ---
 

@@ -194,9 +194,9 @@ class TestVerifyManifestTool:
 
 
 class TestMCPServerToolCount:
-    def test_server_exposes_7_tools(self):
+    def test_server_exposes_8_tools(self):
         tools = _tool_schemas()
-        assert len(tools) == 7
+        assert len(tools) == 8
 
     def test_all_expected_tools_present(self):
         names = {t.name for t in _tool_schemas()}
@@ -204,5 +204,6 @@ class TestMCPServerToolCount:
             "xap_discover_agents", "xap_verify_manifest",
             "xap_create_offer", "xap_respond_to_offer",
             "xap_settle", "xap_verify_receipt", "xap_check_balance",
+            "xap_verify_workflow",
         }
         assert names == expected

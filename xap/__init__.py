@@ -33,6 +33,7 @@ from xap.crypto import (
 from xap.client import XAPClient
 from xap.manifest import AgentManifest
 from xap.verify import verify_manifest
+from xap.clients.workflow import WorkflowClient
 
 __all__ = [
     "__version__",
@@ -61,4 +62,5 @@ __all__ = [
     "XAPClient",
     "AgentManifest",
     "verify_manifest",
+    "WorkflowClient",
 ]

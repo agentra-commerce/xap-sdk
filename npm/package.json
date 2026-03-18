@@ -1,0 +1,38 @@
+{
+  "name": "@agentra/xap-mcp",
+  "version": "0.4.0",
+  "description": "XAP MCP server — agent settlement tools for Claude, Cursor, and any MCP client",
+  "keywords": [
+    "mcp",
+    "xap",
+    "agent-commerce",
+    "settlement",
+    "escrow",
+    "verity",
+    "zexrail",
+    "anthropic",
+    "claude",
+    "ai-agents"
+  ],
+  "homepage": "https://zexrail.com/docs/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentra-commerce/xap-sdk.git",
+    "directory": "npm"
+  },
+  "license": "MIT",
+  "bin": {
+    "xap-mcp": "./bin/xap-mcp.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/check-python.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md"
+  ]
+}
