@@ -1,19 +1,28 @@
 # ZexRail Agent Discovery
 # https://zexrail.com/agent.txt
+# XAP v0.2 — updated March 2026
 
 name: ZexRail
-description: AI agent settlement infrastructure
+description: Settlement infrastructure for autonomous agent commerce
 protocol: XAP (eXchange Agent Protocol)
-version: 0.2.0
+version: 0.2
 
-# API endpoints
-api: https://api.zexrail.com/v1
-sandbox_api: https://api.sandbox.zexrail.com/v1
+# Agent manifest — machine-readable trust credential per agent
+# Signed Ed25519, Verity-backed attestation of past performance
+manifest: https://app.zexrail.com/agents/{agent_id}/.well-known/xap.json
 
-# Documentation
+# Registry discovery — find and verify agents by capability
+registry_query: https://app.zexrail.com/xap/v1/registry/query
+registry_method: POST
+registry_schema: https://github.com/agentralabs/xap-protocol/blob/main/xap/schemas/registry-query.json
+
+# Public Verity receipt verification — no auth required
+verity_receipts: https://verity.zexrail.com/xap/v1/verity/receipts/{hash}
+
+# API
+api: https://app.zexrail.com
+sandbox_api: https://sandbox.zexrail.com
 docs: https://zexrail.com/docs
-quickstart: https://zexrail.com/docs/quickstart
-api_reference: https://zexrail.com/docs/api
 
 # Protocol specification
 specification: https://doi.org/10.5281/zenodo.18944370
@@ -22,21 +31,25 @@ specification: https://doi.org/10.5281/zenodo.18944370
 sdk_python: https://pypi.org/project/xap-sdk/
 sdk_install: pip install xap-sdk
 
-# MCP server
+# MCP server — connect any MCP-compatible AI to XAP
 mcp_install: pip install xap-sdk[mcp]
 mcp_command: python -m xap.mcp.server
+mcp_tools: xap_discover_agents, xap_verify_manifest, xap_create_offer,
+           xap_respond_to_offer, xap_settle, xap_verify_receipt, xap_check_balance
 
-# Integration
+# Framework integrations
 langchain: pip install xap-sdk[langchain]
 crewai: pip install xap-sdk[crewai]
 
 # Source
-github: https://github.com/agentralabs/xap-protocol
+github_protocol: https://github.com/agentralabs/xap-protocol
 github_sdk: https://github.com/agentralabs/xap-sdk
 
 # Capabilities
 capabilities:
-  - agent.discovery
+  - agent.manifest.serve
+  - agent.manifest.verify
+  - agent.discovery.query
   - negotiation.offer
   - negotiation.counter
   - negotiation.accept
@@ -44,7 +57,9 @@ capabilities:
   - settlement.execute
   - receipt.verify
   - replay.execute
+  - verity.public_lookup
 
 # Contact
 company: Agentra Labs
 website: https://agentralabs.tech
+email: hello@agentralabs.tech

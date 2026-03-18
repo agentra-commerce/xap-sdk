@@ -1,24 +1,4 @@
-"""
-XAP MCP Server
-==============
-Model Context Protocol server for XAP agent commerce.
-
-Allows any MCP-compatible AI (Claude, Cursor, etc.) to:
-- Discover agents by capability
-- Create negotiation offers
-- Accept/reject/counter offers
-- Execute settlements
-- Verify receipts via replay
-- Check balances
-
-Run directly:
-    python -m xap.mcp.server
-
-Or configure in Claude Desktop / Claude Code:
-    python -m xap.mcp.setup
-
-Requires: pip install xap-sdk[mcp]
-"""
+"""XAP MCP Server — Model Context Protocol server for XAP agent commerce."""
 
 from __future__ import annotations
 
@@ -36,7 +16,6 @@ _base: XAPIntegrationBase | None = None
 
 
 def get_base() -> XAPIntegrationBase:
-    """Get or create the XAP integration base (sandbox by default)."""
     global _base
     if _base is None:
         _base = XAPIntegrationBase.sandbox(balance=1_000_000)
@@ -44,30 +23,58 @@ def get_base() -> XAPIntegrationBase:
 
 
 def _tool_schemas() -> list[Tool]:
-    """Return the 6 XAP tool definitions."""
+    """Return the 7 XAP tool definitions."""
     return [
         Tool(
             name="xap_discover_agents",
-            description="Search the XAP registry for agents with specific capabilities. Returns matching agents with IDs, capabilities, pricing, and reputation scores.",
+            description="Search the XAP registry for agents by capability. Returns agents ranked by composite score with Verity-backed attestation data.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "capability": {
                         "type": "string",
-                        "description": "The capability to search for (e.g., 'data_analysis', 'payment.process')",
+                        "description": "The capability to search for (e.g., 'code_review', 'text_summarization')",
                     },
-                    "min_reputation": {
+                    "min_success_rate_bps": {
                         "type": "integer",
-                        "description": "Minimum reputation in basis points (0-10000). Default 0.",
+                        "description": "Minimum success rate in basis points (0-10000). 9000 = 90%. Default 0.",
                         "default": 0,
+                    },
+                    "max_price_minor": {
+                        "type": "integer",
+                        "description": "Maximum price in minor units (e.g., 1000 = $10.00 USD). No limit if omitted.",
+                    },
+                    "include_manifest": {
+                        "type": "boolean",
+                        "description": "Include full AgentManifest in results. Use before xap_verify_manifest. Default false.",
+                        "default": False,
+                    },
+                    "page_size": {
+                        "type": "integer",
+                        "description": "Number of results to return (1-100). Default 10.",
+                        "default": 10,
                     },
                 },
                 "required": ["capability"],
             },
         ),
         Tool(
+            name="xap_verify_manifest",
+            description="Verify an agent's manifest (Ed25519 signature + expiry). Call after xap_discover_agents, before xap_create_offer.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "manifest": {
+                        "type": "object",
+                        "description": "The agent manifest object (from xap_discover_agents with include_manifest=true)",
+                    },
+                },
+                "required": ["manifest"],
+            },
+        ),
+        Tool(
             name="xap_create_offer",
-            description="Create a negotiation offer to an agent for a specific service. The offer includes amount, capability requested, and optional conditions.",
+            description="Create a negotiation offer to an agent for a specific capability.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -117,7 +124,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_settle",
-            description="Execute a settlement from an accepted negotiation. Locks funds, verifies conditions, releases payment, and produces a cryptographically verifiable receipt.",
+            description="Execute a settlement from an accepted negotiation. Locks funds, verifies conditions, releases payment.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -142,7 +149,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_verify_receipt",
-            description="Verify that a settlement receipt is deterministically replayable. Returns whether the replay hash matches the original execution.",
+            description="Verify that a settlement receipt is deterministically replayable.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -199,11 +206,31 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
     try:
         if name == "xap_discover_agents":
+            include_mf = arguments.get("include_manifest", False)
             result = base.discover(
                 capability=arguments["capability"],
+                min_success_rate_bps=arguments.get("min_success_rate_bps", 0),
+                max_price_minor=arguments.get("max_price_minor"),
+                include_manifest=include_mf,
+                page_size=arguments.get("page_size", 10),
                 min_reputation=arguments.get("min_reputation", 0),
             )
             return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
+
+        elif name == "xap_verify_manifest":
+            from xap.verify import verify_manifest
+            manifest = arguments["manifest"]
+            v = verify_manifest(manifest)
+            att = manifest.get("capabilities", [{}])[0].get("attestation", {})
+            verdict = {
+                "verified": v.valid, "schema_valid": v.schema_valid,
+                "signature_valid": v.signature_valid, "not_expired": v.not_expired,
+                "claimed_success_rate": f"{att.get('success_rate_bps', 0) / 100:.1f}%",
+                "total_settlements": att.get("total_settlements", 0),
+                "errors": v.errors,
+                "recommendation": "TRUST — valid" if v.valid else "DO_NOT_TRUST — verification failed",
+            }
+            return [TextContent(type="text", text=json.dumps(verdict, indent=2))]
 
         elif name == "xap_create_offer":
             contract = base.create_offer(
@@ -262,16 +289,12 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 
 async def main():
-    """Run the MCP server over stdio."""
     async with stdio_server() as (read, write):
         await app.run(read, write, app.create_initialization_options())
 
-
 def main_cli():
-    """CLI entry point for xap-mcp command."""
     import asyncio
     asyncio.run(main())
-
 
 if __name__ == "__main__":
     main_cli()

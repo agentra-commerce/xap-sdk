@@ -47,18 +47,19 @@ def _setup_provider():
     return base, provider
 
 
-def test_mcp_server_lists_6_tools():
-    """Server exposes exactly 6 tools."""
+def test_mcp_server_lists_7_tools():
+    """Server exposes exactly 7 tools."""
     tools = _tool_schemas()
-    assert len(tools) == 6
+    assert len(tools) == 7
 
 
 def test_mcp_tool_names():
-    """All 6 expected tool names are present."""
+    """All 7 expected tool names are present."""
     tools = _tool_schemas()
     names = {t.name for t in tools}
     expected = {
         "xap_discover_agents",
+        "xap_verify_manifest",
         "xap_create_offer",
         "xap_respond_to_offer",
         "xap_settle",

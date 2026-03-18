@@ -29,13 +29,30 @@ class XAPIntegrationBase:
         client = XAPClient.sandbox(balance=balance)
         return cls(client)
 
-    def discover(self, capability: str, min_reputation: int = 0, max_price: int | None = None) -> dict:
-        """Search the XAP registry for agents with specific capabilities."""
-        kwargs: dict = {"capability": capability}
-        if min_reputation:
-            kwargs["min_reputation_bps"] = min_reputation
-        if max_price is not None:
-            kwargs["max_price_minor_units"] = max_price
+    def discover(
+        self,
+        capability: str,
+        min_success_rate_bps: int = 0,
+        max_price_minor: int | None = None,
+        currency: str | None = None,
+        condition_type: str | None = None,
+        include_manifest: bool = False,
+        page_size: int = 20,
+        # Legacy parameter — mapped to min_success_rate_bps for backwards compat
+        min_reputation: int = 0,
+        max_price: int | None = None,
+    ) -> dict:
+        """Search the XAP registry using RegistryQuery (XAP v0.2)."""
+        effective_min_rate = max(min_success_rate_bps, min_reputation)
+        effective_max_price = max_price_minor or max_price
+
+        kwargs: dict = {"capability": capability, "limit": page_size}
+        if effective_min_rate:
+            kwargs["min_reputation_bps"] = effective_min_rate
+        if effective_max_price is not None:
+            kwargs["max_price_minor_units"] = effective_max_price
+        if include_manifest:
+            kwargs["include_manifest"] = True
         return self.client.discovery.search(**kwargs)
 
     def create_offer(
