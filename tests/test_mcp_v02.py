@@ -42,6 +42,11 @@ class TestDiscoverAgentsV02:
         schema = tools["xap_discover_agents"].inputSchema
         assert "condition_type" in schema["properties"]
 
+    def test_tool_schema_has_currency(self):
+        tools = {t.name: t for t in _tool_schemas()}
+        schema = tools["xap_discover_agents"].inputSchema
+        assert "currency" in schema["properties"]
+
     @pytest.mark.asyncio
     async def test_discover_with_include_manifest(self):
         base = get_base()

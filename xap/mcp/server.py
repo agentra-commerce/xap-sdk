@@ -11,16 +11,13 @@ from mcp.types import Tool, TextContent
 from xap.integrations.base import XAPIntegrationBase
 
 app = Server("xap-mcp")
-
 _base: XAPIntegrationBase | None = None
-
 
 def get_base() -> XAPIntegrationBase:
     global _base
     if _base is None:
         _base = XAPIntegrationBase.sandbox(balance=1_000_000)
     return _base
-
 
 def _tool_schemas() -> list[Tool]:
     """Return the 7 XAP tool definitions."""
@@ -43,6 +40,11 @@ def _tool_schemas() -> list[Tool]:
                     "max_price_minor": {
                         "type": "integer",
                         "description": "Maximum price in minor units (e.g., 1000 = $10.00 USD). No limit if omitted.",
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "ISO 4217 currency code filter. Default: USD.",
+                        "default": "USD",
                     },
                     "condition_type": {
                         "type": "string",
@@ -106,7 +108,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_respond_to_offer",
-            description="Accept, reject, or counter a negotiation offer. For counter-offers, provide new terms.",
+            description="Accept, reject, or counter a negotiation offer.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -121,7 +123,7 @@ def _tool_schemas() -> list[Tool]:
                     },
                     "counter_amount": {
                         "type": "integer",
-                        "description": "New amount for counter-offer (required if action is 'counter')",
+                        "description": "New amount for counter-offer (if action is 'counter')",
                     },
                 },
                 "required": ["contract_id", "action"],
@@ -129,7 +131,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_settle",
-            description="Execute a settlement from an accepted negotiation. Locks funds, verifies conditions, releases payment.",
+            description="Execute settlement from accepted negotiation. Locks funds, verifies, releases.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -139,7 +141,7 @@ def _tool_schemas() -> list[Tool]:
                     },
                     "payee_shares": {
                         "type": "array",
-                        "description": "Optional split: array of {agent_id, share_bps}. Default: 100% to provider.",
+                        "description": "Optional split: [{agent_id, share_bps}]. Default: 100% to provider.",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -168,7 +170,7 @@ def _tool_schemas() -> list[Tool]:
         ),
         Tool(
             name="xap_check_balance",
-            description="Check the current balance of an agent in the settlement adapter.",
+            description="Check an agent's balance in the settlement adapter.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -184,8 +186,7 @@ def _tool_schemas() -> list[Tool]:
 
 
 # Store contracts by negotiation_id for MCP tool lookup
-_contracts: dict[str, dict] = {}
-_verity_receipts: dict[str, dict] = {}
+_contracts: dict[str, dict] = {}; _verity_receipts: dict[str, dict] = {}
 
 def _store_contract(contract: dict) -> None:
     _contracts[contract["negotiation_id"]] = contract
@@ -212,6 +213,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 capability=arguments["capability"],
                 min_success_rate_bps=arguments.get("min_success_rate_bps", 0),
                 max_price_minor=arguments.get("max_price_minor"),
+                currency=arguments.get("currency"),
                 condition_type=arguments.get("condition_type"),
                 include_manifest=include_mf,
                 page_size=arguments.get("page_size", 10),
@@ -222,6 +224,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     if m := r.get("manifest"):
                         att = m.get("capabilities", [{}])[0].get("attestation", {})
                         r["receipt_hashes_available"] = len(att.get("receipt_hashes", []))
+                        r["verification_endpoint"] = att.get("verification_endpoint")
             return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
 
         elif name == "xap_verify_manifest":
