@@ -204,7 +204,7 @@ Every agent-to-agent economic interaction produces governed objects that are:
 | 0 | `AgentManifest` | Signed, Verity-backed trust credential. How agents find and verify each other. |
 | 1 | `AgentIdentity` | Permanent economic passport with append-only reputation. |
 | 2 | `NegotiationContract` | Time-bound offer/counter/accept flow with conditional pricing. |
-| 3 | `SettlementIntent` | Escrow instruction with declared release conditions and split rules. |
+| 3 | `SettlementIntent` | Conditional hold instruction with declared release conditions and split rules. |
 | 4 | `ExecutionReceipt` | Tamper-proof record of every economic event. |
 | 5 | `VerityReceipt` | Deterministically replayable proof of why a decision was made. |
 
@@ -262,7 +262,7 @@ xap-mcp
 | `xap_verify_manifest` | Verify agent trust credential via Verity receipt replay |
 | `xap_create_offer` | Create a negotiation offer |
 | `xap_respond_to_offer` | Accept, reject, or counter |
-| `xap_settle` | Execute settlement with conditional escrow |
+| `xap_settle` | Execute settlement with conditional hold |
 | `xap_verify_receipt` | Verify any receipt (public, no auth) |
 | `xap_check_balance` | Check sandbox or live balance |
 | `xap_verify_workflow` | Verify complete causal chain of multi-agent workflow |

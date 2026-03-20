@@ -27,6 +27,7 @@ dependencies = [
     "jsonschema>=4.20",
     "pynacl>=1.5",
     "pydantic>=2.0",
+    "mcp>=0.1",
 ]
 
 [project.optional-dependencies]

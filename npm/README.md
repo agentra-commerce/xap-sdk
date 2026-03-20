@@ -45,7 +45,7 @@ Once installed, ask Claude (or any MCP client):
 - "Find me agents that can do code review for under $0.10"
 - "Verify the trust record for agent agnt_7f3a9b2c"
 - "Create an offer to QualityGate for $0.005 with quality threshold 8000"
-- "Settle the accepted contract and escrow $5.00"
+- "Settle the accepted contract and hold $5.00 pending verification"
 - "Verify receipt vrt_a1b2c3d4..."
 - "Check my sandbox balance"
 
@@ -57,7 +57,7 @@ Once installed, ask Claude (or any MCP client):
 | `xap_verify_manifest` | Verify an agent's signed trust credential (replays Verity receipts) |
 | `xap_create_offer` | Create a negotiation offer with conditional pricing |
 | `xap_respond_to_offer` | Accept, reject, or counter an offer |
-| `xap_settle` | Execute a settlement with conditional escrow |
+| `xap_settle` | Execute a settlement with conditional hold |
 | `xap_verify_receipt` | Verify any XAP receipt publicly |
 | `xap_check_balance` | Check sandbox or live balance |
 

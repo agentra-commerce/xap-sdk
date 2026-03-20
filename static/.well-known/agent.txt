@@ -26,7 +26,7 @@ mcp_tools:
   xap_verify_manifest      Verify agent trust credential (TSA, policy, attestation)
   xap_create_offer         Create a negotiation offer to an agent
   xap_respond_to_offer     Accept, reject, or counter a negotiation offer
-  xap_settle               Execute a settlement with conditional escrow
+  xap_settle               Execute a settlement with conditional hold
   xap_verify_receipt       Verify any XAP receipt (public, no auth)
   xap_check_balance        Check sandbox or live balance
   xap_verify_workflow      Verify complete causal chain of multi-agent workflow
@@ -50,7 +50,7 @@ primitives:
   - AgentManifest          # Signed trust credential (primitive 0)
   - AgentIdentity          # Economic passport (primitive 1)
   - NegotiationContract    # Offer/counter/accept (primitive 2)
-  - SettlementIntent       # Conditional escrow (primitive 3)
+  - SettlementIntent       # Conditional hold (primitive 3)
   - ExecutionReceipt       # Settlement record (primitive 4)
   - VerityReceipt          # Deterministic replay proof (primitive 5)
 

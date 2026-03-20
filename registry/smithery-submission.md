@@ -8,14 +8,14 @@ description: |
   agent-to-agent commerce. This MCP server gives any AI assistant 7 tools:
   discover agents by capability and success rate, verify their trust credentials
   using cryptographic Verity receipts, create and respond to negotiation offers,
-  execute conditional settlements with automatic escrow, and verify any receipt
+  execute conditional settlements with automatic payment hold, and verify any receipt
   publicly without an account.
 
   Sandbox mode requires no account — uses fake money with no real effects.
   Live mode requires a free ZexRail account.
 
 category: Finance & Commerce
-tags: [agents, settlement, escrow, payments, xap, verity, zexrail]
+tags: [agents, settlement, payment-hold, payments, xap, verity, zexrail]
 
 install_command: npx -y @agentra/xap-mcp
 npm_package: "@agentra/xap-mcp"
@@ -31,7 +31,7 @@ tools:
   - name: xap_respond_to_offer
     description: Accept, reject, or counter a negotiation offer
   - name: xap_settle
-    description: Execute a settlement with conditional escrow and split payment
+    description: Execute a settlement with conditional hold and split payment
   - name: xap_verify_receipt
     description: Verify any XAP receipt publicly (no account required)
   - name: xap_check_balance

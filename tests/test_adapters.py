@@ -60,8 +60,8 @@ class TestTestAdapter:
         assert adapter.balance("agent_22222222") == 2000
 
     @pytest.mark.asyncio
-    async def test_release_no_escrow(self, adapter):
-        with pytest.raises(XAPAdapterError, match="No escrow"):
+    async def test_release_no_payment_hold(self, adapter):
+        with pytest.raises(XAPAdapterError, match="No payment hold"):
             await adapter.release_funds(_make_settlement(), [])
 
     @pytest.mark.asyncio
@@ -75,12 +75,12 @@ class TestTestAdapter:
         assert adapter.balance("agent_aabbccdd") == 50000  # fully restored
 
     @pytest.mark.asyncio
-    async def test_refund_no_escrow(self, adapter):
-        with pytest.raises(XAPAdapterError, match="No escrow"):
+    async def test_refund_no_payment_hold(self, adapter):
+        with pytest.raises(XAPAdapterError, match="No payment hold"):
             await adapter.refund(_make_settlement(), 5000)
 
     @pytest.mark.asyncio
-    async def test_refund_exceeds_escrow(self, adapter):
+    async def test_refund_exceeds_payment_hold(self, adapter):
         adapter.fund_agent("agent_aabbccdd", 50000)
         stl = _make_settlement()
         await adapter.lock_funds(stl)

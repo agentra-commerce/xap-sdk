@@ -10,15 +10,15 @@ class SettlementAdapter(ABC):
 
     @abstractmethod
     async def lock_funds(self, settlement: dict) -> dict:
-        """Lock funds in escrow. Returns lock result."""
+        """Lock funds in a payment hold. Returns lock result."""
 
     @abstractmethod
     async def release_funds(self, settlement: dict, payouts: list[dict]) -> dict:
-        """Release escrowed funds to payees. Returns release result."""
+        """Release held funds to payees. Returns release result."""
 
     @abstractmethod
     async def refund(self, settlement: dict, amount: int) -> dict:
-        """Return escrowed funds to payer. Returns refund result."""
+        """Return held funds to payer. Returns refund result."""
 
     @abstractmethod
     def adapter_type(self) -> str:

@@ -13,7 +13,7 @@ class TestAdapter(SettlementAdapter):
 
     def __init__(self) -> None:
         self._balances: dict[str, int] = {}
-        self._escrow: dict[str, int] = {}
+        self._payment_hold: dict[str, int] = {}
         self._transactions: list[dict] = []
 
     def fund_agent(self, agent_id: str, amount: int) -> None:
@@ -27,12 +27,12 @@ class TestAdapter(SettlementAdapter):
         })
 
     async def lock_funds(self, settlement: dict) -> dict:
-        """Move funds from payer to escrow."""
+        """Move funds from payer to payment hold."""
         payer = settlement["payer_agent"]
         amount = settlement["total_amount_minor_units"]
         stl_id = settlement["settlement_id"]
 
-        if stl_id in self._escrow:
+        if stl_id in self._payment_hold:
             raise XAPAdapterError(f"Funds already locked for settlement {stl_id}")
 
         balance = self._balances.get(payer, 0)
@@ -42,7 +42,7 @@ class TestAdapter(SettlementAdapter):
             )
 
         self._balances[payer] -= amount
-        self._escrow[stl_id] = amount
+        self._payment_hold[stl_id] = amount
         self._transactions.append({
             "type": "lock",
             "settlement_id": stl_id,
@@ -53,18 +53,18 @@ class TestAdapter(SettlementAdapter):
         return {"status": "locked", "amount": amount}
 
     async def release_funds(self, settlement: dict, payouts: list[dict]) -> dict:
-        """Release escrowed funds to payees according to split."""
+        """Release held funds to payees according to split."""
         stl_id = settlement["settlement_id"]
 
-        if stl_id not in self._escrow:
-            raise XAPAdapterError(f"No escrow found for settlement {stl_id}")
+        if stl_id not in self._payment_hold:
+            raise XAPAdapterError(f"No payment hold found for settlement {stl_id}")
 
-        escrowed = self._escrow[stl_id]
+        held = self._payment_hold[stl_id]
         total_payout = sum(p["amount_minor_units"] for p in payouts)
 
-        if total_payout > escrowed:
+        if total_payout > held:
             raise XAPAdapterError(
-                f"Payout total {total_payout} exceeds escrowed {escrowed}"
+                f"Payout total {total_payout} exceeds held amount {held}"
             )
 
         for payout in payouts:
@@ -72,7 +72,7 @@ class TestAdapter(SettlementAdapter):
             amt = payout["amount_minor_units"]
             self._balances[agent] = self._balances.get(agent, 0) + amt
 
-        del self._escrow[stl_id]
+        del self._payment_hold[stl_id]
         self._transactions.append({
             "type": "release",
             "settlement_id": stl_id,
@@ -80,7 +80,7 @@ class TestAdapter(SettlementAdapter):
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
 
-        remainder = escrowed - total_payout
+        remainder = held - total_payout
         if remainder > 0:
             payer = settlement["payer_agent"]
             self._balances[payer] = self._balances.get(payer, 0) + remainder
@@ -88,22 +88,22 @@ class TestAdapter(SettlementAdapter):
         return {"status": "released", "total_released": total_payout}
 
     async def refund(self, settlement: dict, amount: int) -> dict:
-        """Return escrowed funds to payer."""
+        """Return held funds to payer."""
         stl_id = settlement["settlement_id"]
         payer = settlement["payer_agent"]
 
-        if stl_id not in self._escrow:
-            raise XAPAdapterError(f"No escrow found for settlement {stl_id}")
+        if stl_id not in self._payment_hold:
+            raise XAPAdapterError(f"No payment hold found for settlement {stl_id}")
 
-        escrowed = self._escrow[stl_id]
-        if amount > escrowed:
+        held = self._payment_hold[stl_id]
+        if amount > held:
             raise XAPAdapterError(
-                f"Refund amount {amount} exceeds escrowed {escrowed}"
+                f"Refund amount {amount} exceeds held amount {held}"
             )
 
-        self._escrow[stl_id] -= amount
-        if self._escrow[stl_id] == 0:
-            del self._escrow[stl_id]
+        self._payment_hold[stl_id] -= amount
+        if self._payment_hold[stl_id] == 0:
+            del self._payment_hold[stl_id]
 
         self._balances[payer] = self._balances.get(payer, 0) + amount
         self._transactions.append({
