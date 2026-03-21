@@ -17,8 +17,8 @@ description: |
 category: Finance & Commerce
 tags: [agents, settlement, payment-hold, payments, xap, verity, zexrail]
 
-install_command: npx -y @agentra/xap-mcp
-npm_package: "@agentra/xap-mcp"
+install_command: npx -y @agenticamem/xap-mcp
+npm_package: "@agenticamem/xap-mcp"
 pypi_package: xap-sdk[mcp]
 
 tools:

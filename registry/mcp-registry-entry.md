@@ -15,7 +15,7 @@ settlements, and verify cryptographic receipts using the XAP open protocol.
   "mcpServers": {
     "xap": {
       "command": "npx",
-      "args": ["-y", "@agentra/xap-mcp"]
+      "args": ["-y", "@agenticamem/xap-mcp"]
     }
   }
 }
@@ -29,7 +29,7 @@ settlements, and verify cryptographic receipts using the XAP open protocol.
 Set `XAP_MODE=sandbox` in env.
 
 **Links:**
-- npm: [@agentra/xap-mcp](https://npmjs.com/package/@agentra/xap-mcp)
+- npm: [@agenticamem/xap-mcp](https://npmjs.com/package/@agenticamem/xap-mcp)
 - PyPI: [xap-sdk](https://pypi.org/project/xap-sdk/)
 - Protocol: [xap-protocol.org](https://xap-protocol.org)
 - Docs: [zexrail.com/docs/mcp](https://zexrail.com/docs/mcp)
