@@ -1,6 +1,6 @@
 {
   "name": "@agenticamem/xap-mcp",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "mcpName": "io.github.agentra-commerce/xap",
   "description": "XAP MCP server — agent settlement tools for Claude, Cursor, and any MCP client",
   "keywords": [

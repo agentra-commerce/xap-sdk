@@ -13,7 +13,7 @@ import json
 import os
 import platform
 import shutil
-import subprocess
+import subprocess  # Required: invokes `claude mcp add` CLI to register the server
 import sys
 from pathlib import Path
 

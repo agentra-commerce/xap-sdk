@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
+import time
+from collections import OrderedDict
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -12,10 +15,62 @@ from mcp.types import Tool, TextContent
 
 from xap.integrations.base import XAPIntegrationBase
 
+logger = logging.getLogger(__name__)
+
 XAP_MODE    = os.environ.get("XAP_MODE", "sandbox")    # "sandbox" or "live"
 XAP_API_KEY = os.environ.get("XAP_API_KEY", "")         # required for live
 XAP_API_URL = os.environ.get("XAP_API_URL",             # override for local dev
                 "https://api.zexrail.com")
+
+
+class BoundedCache:
+    """Bounded cache with TTL expiry to prevent unbounded memory growth."""
+
+    def __init__(self, max_size: int = 1000, ttl_seconds: int = 3600):
+        self._cache: OrderedDict = OrderedDict()
+        self._max_size = max_size
+        self._ttl = ttl_seconds
+
+    def set(self, key: str, value: object) -> None:
+        self._cleanup()
+        if key in self._cache:
+            del self._cache[key]
+        elif len(self._cache) >= self._max_size:
+            self._cache.popitem(last=False)
+        self._cache[key] = (time.time(), value)
+
+    def get(self, key: str) -> object | None:
+        self._cleanup()
+        if key in self._cache:
+            return self._cache[key][1]
+        return None
+
+    def __contains__(self, key: str) -> bool:
+        self._cleanup()
+        return key in self._cache
+
+    def __getitem__(self, key: str) -> object:
+        self._cleanup()
+        if key in self._cache:
+            return self._cache[key][1]
+        raise KeyError(key)
+
+    def __setitem__(self, key: str, value: object) -> None:
+        self.set(key, value)
+
+    def _cleanup(self) -> None:
+        now = time.time()
+        expired = [k for k, (t, _) in self._cache.items() if now - t > self._ttl]
+        for k in expired:
+            del self._cache[k]
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+    def __len__(self) -> int:
+        self._cleanup()
+        return len(self._cache)
+
 
 app = Server("xap-mcp")
 _base: XAPIntegrationBase | None = None
@@ -206,16 +261,18 @@ def _tool_schemas() -> list[Tool]:
     ]
 
 
-# Store contracts by negotiation_id for MCP tool lookup
-_contracts: dict[str, dict] = {}; _verity_receipts: dict[str, dict] = {}
+# Store contracts by negotiation_id for MCP tool lookup (bounded to prevent memory leaks)
+_contracts: BoundedCache = BoundedCache(max_size=1000, ttl_seconds=3600)
+_verity_receipts: BoundedCache = BoundedCache(max_size=1000, ttl_seconds=3600)
 
 def _store_contract(contract: dict) -> None:
-    _contracts[contract["negotiation_id"]] = contract
+    _contracts.set(contract["negotiation_id"], contract)
 
 def _get_contract(contract_id: str) -> dict:
-    if contract_id not in _contracts:
-        raise ValueError(f"Contract not found: {contract_id}")
-    return _contracts[contract_id]
+    contract = _contracts.get(contract_id)
+    if contract is None:
+        raise KeyError(f"Contract not found: {contract_id}")
+    return contract
 
 
 @app.list_tools()
@@ -274,8 +331,10 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     if mv.receipts_checked > 0:
                         full_recommendation = mv.recommendation
                     full_warnings = mv.warnings
-                except Exception:
-                    pass  # Full verification is additive — basic result stands
+                except (ConnectionError, TimeoutError, ValueError, KeyError) as ve:
+                    logger.debug("Full manifest verification skipped: %s(%s)", type(ve).__name__, ve)
+                except Exception as ve:
+                    logger.warning("Unexpected error in full manifest verification: %s(%s)", type(ve).__name__, ve)
 
             verdict = {
                 "verified": v.valid, "schema_valid": v.schema_valid,
@@ -322,14 +381,15 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             contract = _get_contract(arguments["contract_id"])
             result = await base.settle_async(contract, payee_shares=arguments.get("payee_shares"))
             if "verity_receipt" in result:
-                _verity_receipts[result["verity_id"]] = result["verity_receipt"]
+                _verity_receipts.set(result["verity_id"], result["verity_receipt"])
             return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
 
         elif name == "xap_verify_receipt":
             rid = arguments["receipt_id"]
-            if rid not in _verity_receipts:
+            receipt = _verity_receipts.get(rid)
+            if receipt is None:
                 return [TextContent(type="text", text=json.dumps({"error": f"Verity receipt not found: {rid}"}))]
-            return [TextContent(type="text", text=json.dumps({"verified": base.verify(_verity_receipts[rid])}))]
+            return [TextContent(type="text", text=json.dumps({"verified": base.verify(receipt)}))]
 
         elif name == "xap_check_balance":
             return [TextContent(type="text", text=json.dumps(
@@ -341,12 +401,17 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             try:
                 result = await wf_client.verify_workflow(arguments["workflow_id"])
                 return [TextContent(type="text", text=json.dumps(result, indent=2, default=str))]
-            except Exception as e:
-                return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
+            except (ConnectionError, TimeoutError) as e:
+                return [TextContent(type="text", text=json.dumps({"error": f"Network error: {e}"}))]
+            except (ValueError, KeyError) as e:
+                return [TextContent(type="text", text=json.dumps({"error": f"Invalid workflow data: {e}"}))]
 
         else:
             return [TextContent(type="text", text=json.dumps({"error": f"Unknown tool: {name}"}))]
+    except (KeyError, ValueError) as e:
+        return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
     except Exception as e:
+        logger.error("Unhandled %s in tool %s: %s", type(e).__name__, name, e)
         return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
 
 
