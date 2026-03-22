@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Stress test: 10 split settlements with partial failures.
 
+This file is for validation/testing only — not used in production.
+
 Run: python validation/stress_splits.py
 """
 
@@ -8,6 +10,9 @@ import asyncio
 import sys
 
 from xap import XAPClient, AgentId
+
+# Test-only constants — these values are used exclusively for validation testing
+TEST_BALANCE_MINOR_UNITS = 10_000_000  # $100,000 in cents — test only
 
 
 async def run_scenario(
@@ -24,7 +29,7 @@ async def run_scenario(
 ) -> bool:
     """Run a single split scenario and verify results."""
     buyer_id = AgentId.generate()
-    buyer = XAPClient.sandbox(agent_id=buyer_id, balance=10_000_000)
+    buyer = XAPClient.sandbox(agent_id=buyer_id, balance=TEST_BALANCE_MINOR_UNITS)
 
     # Create payee clients sharing the adapter
     responder_id = AgentId(payees[0]["agent_id"])

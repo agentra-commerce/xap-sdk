@@ -12,10 +12,19 @@ from __future__ import annotations
 import json
 import os
 import platform
-import shutil
-import subprocess  # Required: invokes `claude mcp add` CLI to register the server
 import sys
 from pathlib import Path
+
+
+def _claude_code_config_path() -> Path:
+    """Return the path to Claude Code MCP settings."""
+    system = platform.system()
+    if system == "Darwin":
+        return Path.home() / ".claude" / "settings.json"
+    elif system == "Windows":
+        return Path(os.environ.get("APPDATA", "")) / "claude" / "settings.json"
+    else:
+        return Path.home() / ".config" / "claude" / "settings.json"
 
 
 def _claude_desktop_config_path() -> Path:
@@ -30,24 +39,31 @@ def _claude_desktop_config_path() -> Path:
 
 
 def setup_claude_code() -> bool:
-    """Configure XAP MCP server for Claude Code."""
-    claude_bin = shutil.which("claude")
-    if not claude_bin:
-        print("Claude Code CLI not found. Skipping Claude Code setup.")
-        return False
+    """Configure XAP MCP server for Claude Code via config file."""
+    config_path = _claude_code_config_path()
+    config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    try:
-        subprocess.run(
-            ["claude", "mcp", "add", "xap-mcp", "--", sys.executable, "-m", "xap.mcp.server"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        print("Configured XAP MCP server for Claude Code.")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to configure Claude Code: {e.stderr}")
-        return False
+    config: dict = {}
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            config = {}
+
+    if "mcpServers" not in config:
+        config["mcpServers"] = {}
+
+    config["mcpServers"]["xap-mcp"] = {
+        "command": sys.executable,
+        "args": ["-m", "xap.mcp.server"],
+        "env": {
+            "XAP_MODE": "sandbox",
+        },
+    }
+
+    config_path.write_text(json.dumps(config, indent=2))
+    print(f"Configured XAP MCP server for Claude Code at {config_path}")
+    return True
 
 
 def setup_claude_desktop() -> bool:
@@ -57,7 +73,10 @@ def setup_claude_desktop() -> bool:
 
     config: dict = {}
     if config_path.exists():
-        config = json.loads(config_path.read_text())
+        try:
+            config = json.loads(config_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            config = {}
 
     if "mcpServers" not in config:
         config["mcpServers"] = {}

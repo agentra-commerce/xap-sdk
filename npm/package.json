@@ -1,6 +1,6 @@
 {
   "name": "@agenticamem/xap-mcp",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "mcpName": "io.github.agentra-commerce/xap",
   "description": "XAP MCP server — agent settlement tools for Claude, Cursor, and any MCP client",
   "keywords": [
@@ -22,6 +22,7 @@
     "directory": "npm"
   },
   "license": "MIT",
+  "security": "https://github.com/agentra-commerce/xap-sdk/blob/main/SECURITY.md",
   "bin": {
     "xap-mcp": "./bin/xap-mcp.js"
   },

@@ -331,10 +331,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                     if mv.receipts_checked > 0:
                         full_recommendation = mv.recommendation
                     full_warnings = mv.warnings
-                except (ConnectionError, TimeoutError, ValueError, KeyError) as ve:
+                except (ConnectionError, TimeoutError, ValueError, KeyError, AttributeError, TypeError) as ve:
                     logger.debug("Full manifest verification skipped: %s(%s)", type(ve).__name__, ve)
-                except Exception as ve:
-                    logger.warning("Unexpected error in full manifest verification: %s(%s)", type(ve).__name__, ve)
 
             verdict = {
                 "verified": v.valid, "schema_valid": v.schema_valid,
@@ -408,11 +406,12 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
         else:
             return [TextContent(type="text", text=json.dumps({"error": f"Unknown tool: {name}"}))]
-    except (KeyError, ValueError) as e:
+    except (KeyError, ValueError, TypeError, AttributeError) as e:
+        logger.error("Tool error in %s: %s(%s)", name, type(e).__name__, e)
         return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
-    except Exception as e:
-        logger.error("Unhandled %s in tool %s: %s", type(e).__name__, name, e)
-        return [TextContent(type="text", text=json.dumps({"error": str(e)}))]
+    except (ConnectionError, TimeoutError, OSError) as e:
+        logger.error("Network error in %s: %s(%s)", name, type(e).__name__, e)
+        return [TextContent(type="text", text=json.dumps({"error": f"Service unavailable: {e}"}))]
 
 
 async def main():
